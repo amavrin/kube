@@ -1,0 +1,18 @@
+- hosts: kube-test-manager
+  tasks:
+    - name: Deploy Nginx ingress controller
+      command: kubectl apply
+               -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v0.40.2/deploy/static/provider/baremetal/deploy.yaml
+      when:
+        ingress_type == "nginx"
+
+    - name: Deploy Contour ingress controller
+      command: kubectl apply
+               -f https://j.hept.io/contour-deployment-rbac
+      when:
+        ingress_type == "contour"
+
+    - name: Patch Contour/envoy service
+      command: kubectl patch service -n projectcontour envoy -p '{"spec":{"type":"NodePort"}}'
+      when:
+        ingress_type == "contour"

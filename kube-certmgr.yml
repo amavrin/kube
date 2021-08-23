@@ -1,0 +1,80 @@
+- hosts: kube-test-manager
+  tasks:
+    - name: Deploy Cert Manager
+      command: kubectl apply
+               -f https://github.com/jetstack/cert-manager/releases/download/v1.3.1/cert-manager.crds.yaml
+
+
+    - name: Create Route53 secret
+      community.kubernetes.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Secret
+          type: Opaque
+          metadata:
+            name: route53-credentials-secret
+            namespace: cert-manager
+          stringData:
+            secret-access-key: !vault |
+              $ANSIBLE_VAULT;1.1;AES256
+              61363263376636613764303237376161323461653430666538623138346137343632653130373136
+              3237323161393839623961303336613439363565643530320a346633303233663134366266656233
+              30346462366435323664626666346666336136373364346162623337663438616137373866326566
+              3262393834316565330a363539306461633763383437663430383066663135336238386664616136
+              62303836663762393438353831643830373534653264646539353738383238663035303964663138
+              3535656332333264393261636336383566623837306134393433
+
+    - name: Create Cluster Issuer (letsencrypt-staging)
+      community.kubernetes.k8s:
+        state: present
+        definition:
+          apiVersion: cert-manager.io/v1
+          kind: ClusterIssuer
+          metadata:
+            name: letsencrypt-staging
+          spec:
+            acme:
+              email: amavrin@gmail.com
+              server: https://acme-staging-v02.api.letsencrypt.org/directory
+              privateKeySecretRef:
+                name: letsencrypt
+              solvers:
+                - selector:
+                    dnsZones:
+                      - "gs.team"
+                  dns01:
+                    route53:
+                      region: us-east-1
+                      hostedZoneID: Z2H8OH7EDOWKXF
+                      accessKeyID: AKIARKS7N55S2JSZZRPC
+                      secretAccessKeySecretRef:
+                        name: route53-credentials-secret
+                        key: secret-access-key
+
+    - name: Create Cluster Issuer (letsencrypt-prod)
+      community.kubernetes.k8s:
+        state: present
+        definition:
+          apiVersion: cert-manager.io/v1
+          kind: ClusterIssuer
+          metadata:
+            name: letsencrypt-prod
+          spec:
+            acme:
+              email: amavrin@gmail.com
+              server: https://acme-v02.api.letsencrypt.org/directory
+              privateKeySecretRef:
+                name: letsencrypt
+              solvers:
+                - selector:
+                    dnsZones:
+                      - "gs.team"
+                  dns01:
+                    route53:
+                      region: us-east-1
+                      hostedZoneID: Z2H8OH7EDOWKXF
+                      accessKeyID: AKIARKS7N55S2JSZZRPC
+                      secretAccessKeySecretRef:
+                        name: route53-credentials-secret
+                        key: secret-access-key

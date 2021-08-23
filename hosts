@@ -1,0 +1,9 @@
+[masters]
+kube-test-manager
+
+[workers]
+kube-test-node1
+kube-test-node2
+
+[all:vars]
+ansible_python_interpreter=/usr/bin/python3

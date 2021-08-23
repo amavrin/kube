@@ -1,0 +1,7 @@
+- hosts: all
+  tasks:
+    - name: Enable bash command completion
+      lineinfile:
+        path: /home/ubuntu/.bashrc
+        regexp: '.*kubectl completion bash.*'
+        line: 'source <(kubectl completion bash)'
